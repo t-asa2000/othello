@@ -1,0 +1,1 @@
+gcc -o othello othello.c --exec-charset=cp932
