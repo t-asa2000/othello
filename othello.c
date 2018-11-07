@@ -9,7 +9,7 @@ int can_put_cell[];
 int now_player,cpu,multiplay,exi = 0,can_put_cells;
 //cell,now_player,cpu >>> black 1 white -1 no-stone("cell"only) 0
 //cell[a] (x,y)...a(=(y-1)*8+(x-1)) >>> example: Top-left(1,1)... a = 0 Lower-right(8,8)... a = 63(=7*8+7)
-//can_put_cell[b] = cell[a]
+//can_put_cell[b] = a
 
 
 
