@@ -71,7 +71,7 @@ void can_put(){ //石を置くことができるマスをスキャン
             }while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)); //フォーカス中のマスに相手の石がある場合スキャンを続行
             if(!cell_read(x,y) && (i1 > 1)){ //フォーカス中のマスに何も石が置いてなく，スキャン回数が2回以上
                 can_put_cell[can_put_cells] = get_number(x,y); //位置を要素番号形式（上述）で記録
-                upper_left[can_put_cells] = 
+                upper_left[can_put_cells] = 1;
                 can_put_cells++; //石が置くことができるマスの数を増加
             }
             i1 = 0; //スキャン回数のリセット
@@ -163,6 +163,7 @@ void can_put(){ //石を置くことができるマスをスキャン
             if(cell_read(x+1,y+1)==now_player){
                 printf("[Delete]%d,%d",x,y);
                 can_put_cell_delete(i);
+                i--;
             }
         }
     }
