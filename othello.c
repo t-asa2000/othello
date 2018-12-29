@@ -163,7 +163,6 @@ void can_put(){ //石を置くことができるマスをスキャン
             if(cell_read(x+1,y+1)==now_player){
                 printf("[Delete]%d,%d",x,y);
                 can_put_cell_delete(i);
-                i--;
             }
         }
     }
