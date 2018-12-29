@@ -39,7 +39,7 @@ void cell_write(int x,int y){ //指定した座標のマスに石を置く
 }
 
 int cell_on_the_board(int x,int y){ //指定した座標のマスが存在するか返す
-    if((x > 0)||(x < 9)||(y > 0)||(y < 9)) 
+    if((x > 0)&&(x < 9)&&(y > 0)&&(y < 9)) 
         return 1;
     return 0;
 }
@@ -56,11 +56,12 @@ void can_put(){ //石を置くことができるマスをスキャン
                 i1++; //スキャン回数を増加
             }while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)); //フォーカス中のマスに相手の石がある場合スキャンを続行
             if(!cell_read(x,y) && (i1 > 1)){ //フォーカス中のマスに何も石が置いてなく，スキャン回数が2回以上
+                printf("%d(%d,%d) -> %d")
                 can_put_cell[can_put_cells] = get_number(x,y); //位置を要素番号形式（上述）で記録
                 can_put_cells++; //石が置くことができるマスの数を増加
             }
             i1 = 0; //スキャン回数のリセット
-            get_position(i,&x,&y);
+            get_position(i,&x,&y); //座標リセット
             //上方向
             do{
                 y--; //フォーカスするマスを一つ上に移動
@@ -139,22 +140,159 @@ void can_put(){ //石を置くことができるマスをスキャン
                 can_put_cell[can_put_cells] = get_number(x,y);
                 can_put_cells++;
             }
-            i1 = 0;
         }
     }
-    //以下，デバッグ用．
-    for(i = 0;i < can_put_cells;i++){
-        x = can_put_cell[i] % 8 + 1;
-        y = can_put_cell[i] / 8 + 1;
-        printf("%d (%d,%d)\n",i,x,y);
+    for(i=0;i<can_put_cells;i++){
+        get_position(can_put_cell[i],&x,&y);
+        printf("%d(%d,%d) -> %d\n",i+1,x,y,cell[can_put_cell[i]]);
     }
 }
 
-void attack(int i){ //攻撃(指定したマスに石を置き周りのマスも操作する)
-    int x,y;
-    get_position(can_put_cell[i],&x,&y);
+int attack(int i){ //攻撃(指定したマスに石を置き周りのマスも操作する)
+    int x,y,i1 = 0;
+    int x1[64]; //置き換えマスリスト(x座標)
+    int y1[64]; //置き換えマスリスト(y座標)
+    //要素数未定義ではコンパイルが通らなかったためマスの数である64に指定．
+    if((i < 0)||(i >= can_put_cells)){
+        return 1; //エラー
+    }
+    get_position(can_put_cell[i],&x,&y); //座標を取得
+    //置けるかどうか確認する
+    printf("%d(%d,%d) -> %d\n",i+1,x,y,cell[can_put_cell[i]]);
+    if(cell[can_put_cell[i]]){
+        return 1; //エラー
+    }
+    //指定マス
+    cell[can_put_cell[i]] = now_player;
     //左上方向
-    while(cell_on_the_board(x,y))
+    x--;
+    y--; 
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        x--;
+        y--;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    //上方向
+    y--; 
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        y--;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    //右上方向
+    x++;
+    y--; 
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        x++;
+        y--;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    //左方向
+    x--;
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        x--;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    //右方向
+    x++;
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        x++;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    //左下方向
+    x--;
+    y++;
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        x--;
+        y++;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    //下方向
+    y++;
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        y++;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    //右下方向
+    x++;
+    y++;
+    while(cell_on_the_board(x,y)&&(cell_read(x,y) == -now_player)){ //相手の石があるか
+        x1[i1] = x;
+        y1[i1] = y; //リスト追加
+        i1++; //リスト個数を増加
+        x++;
+        y++;
+    }
+    if(cell_on_the_board(x,y)&&(cell_read(x,y) == now_player)){ //自分の石があるか(自分の石同士に挟まれているか)
+        for(;i1;i1--){
+            cell_write(x1[i1-1],y1[i1-1]);
+        }
+    }
+    get_position(can_put_cell[i],&x,&y); //座標リセット
+    i1 = 0; //リスト個数リセット
+    return 0; //成功
 }
 
 
@@ -196,7 +334,7 @@ void two_byte_char(int a){ //全角数字を出力
 }
 
 void board_print(){ //ターミナル上に盤面を出力
-    int x,y,i = 0;
+    int x,y,i;
     printf("\n  １２３４５６７８\n");
     for(y = 1;y < 9;y++){
         two_byte_char(y);
@@ -214,14 +352,13 @@ void board_print(){ //ターミナル上に盤面を出力
                             printf("　");
                         }else if(can_put_cell[i] == get_number(x,y)){
                             if(i < 10){
-                                two_byte_char(i);
+                                two_byte_char(i+1); //0が紛らわしいので+1
                             }else{
-                                printf("%d",i);
+                                printf("%d",i+1);
                             }
                             break;
                         }
                     }
-                    i = 0;
                     break;
             }
         }
@@ -236,16 +373,21 @@ int random(){ //乱数を返す
 }
 
 void user_turn(){ //ユーザー(人間)のターン
-    int put;
+    int put,i=0;
     can_put();
     board_print();
-    if(can_put_cells){ //石を置けるマスがある
+    if(can_put_cells){
         do{
-            printf("どこに石を置きますか?>");
+            printf("どこに石を置きますか?\n置けるマスが無い場合は0以下の整数を入力しスキップしてください．>");
             scanf("%d",&put);
-        }while((put < 0)||(put >= can_put_cells)); //指定された選択肢以外の場合は再度質問
-        attack(put);
-    }
+            if(put < 1){
+                return;
+            }
+        }while(attack(put-1)); //+1したのを元に戻す(347行目参照)．成功すれば0を返すためループ脱出．
+        return;
+    }else{
+        printf("置けるマスがありません．\n");
+    }   
 }
 
 void cpu_turn(){ //CPUのターン
@@ -264,25 +406,40 @@ void game(){
             cpu = BLACK;
             printf("\nあなたは後手です．\n");
         }
+    }else{
+        cpu = 0;
     }
     cell_write(5,4);
     cell_write(4,5);
     now_player *= -1; //プレイヤー交代
     cell_write(4,4);
     cell_write(5,5);
-    //while(1){
+    while(1){
         now_player *= -1;
+        switch (now_player){
+            case BLACK:
+                printf("○先手");
+                break;
+            case WHITE:
+                printf("●後手");
+                break;
+            default:
+                break;
+        }
         if(now_player == cpu){
+            printf("(CPU)の番です．\n");
             cpu_turn();
         }else{
+            printf("の番です．\n");
             user_turn();
         }
-    //}
+        can_put_cells = 0; //置けるマスのリセット
+    }
 }
 
 int main(){
     int exi = 0; //ゲームを終了するかどうか
-    while(!exi){
+    while(!exi){ 
         int i;
         for(i = 0;i<64;i++){
             cell[i] = 0;
@@ -292,7 +449,9 @@ int main(){
         cpu = WHITE;
         gamemode = SINGLE_PLAY;
         can_put_cells = 0;
+        //新規ゲーム
         game();
+        //ゲーム終了後
         do{
             printf("0...もう一度遊ぶ,1...終了>");
             scanf("%d",&exi);
