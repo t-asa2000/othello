@@ -1,1 +1,0 @@
-gcc -o printftest printftest.c --exec-charset=cp932
