@@ -32,8 +32,20 @@ void get_position(int i,int *x,int *y){ //要素番号→座標形式変換
 }
 
 int cell_read(int x,int y){ //指定した座標のマスの状態を返す
-    if((x > 0)&&(x < 9)&&(y > 0)&&(y < 9)) 
+    if((x > 0)&&(x < 9)&&(y > 0)&&(y < 9)) {
+        //printf("cell_read(%d,%d) -> %d\n",x,y,cell[get_number(x,y)]);
         return cell[get_number(x,y)];
+    }
+    //printf("cell_read(%d,%d) -> %d\n",x,y,cell[get_number(x,y)]);
+    return NOT_FOUND;
+}
+
+int cell_read2(int x,int y){ //指定した座標のマスの状態を返す
+    if((x > 0)&&(x < 9)&&(y > 0)&&(y < 9)) {
+        //printf("cell_read(%d,%d) -> %d\n",x,y,cell[get_number(x,y)]);
+        return cell[get_number(x,y)];
+    }
+    //printf("cell_read(%d,%d) -> %d\n",x,y,cell[get_number(x,y)]);
     return NOT_FOUND;
 }
 
@@ -62,7 +74,7 @@ void can_put(){ //石を置くことができるマスをスキャン
     for(i = 0;i < 64;i++){
         if(cell[i] == now_player){ //自プレイヤーの石を検出
             get_position(i,&x,&y);
-            printf("%d(%d,%d) %d\n",i,x,y,can_put_cells);
+            //printf("%d(%d,%d) %d\n",i,x,y,can_put_cells);
             //左上方向
             do{
                 x--; 
@@ -161,7 +173,7 @@ void can_put(){ //石を置くことができるマスをスキャン
         if(upper_left[i]){
             get_position(can_put_cell[i],&x,&y);
             if(cell_read(x+1,y+1)==now_player){
-                printf("[Delete]%d,%d",x,y);
+                //printf("[Delete]%d,%d",x,y);
                 can_put_cell_delete(i);
             }
         }
@@ -190,7 +202,7 @@ void can_put(){ //石を置くことができるマスをスキャン
             }
         }
         if(delete_flag){
-            printf("[Delete]%d,%d",x,y);
+            //printf("[Delete]%d,%d",x,y);
             can_put_cell_delete(i);
             i--;
         }
@@ -207,7 +219,7 @@ int attack(int i){ //攻撃(指定したマスに石を置き周りのマスも�
     }
     get_position(can_put_cell[i],&x,&y); //座標を取得
     //置けるかどうか確認する
-    printf("%d(%d,%d) -> %d\n",i+1,x,y,cell[can_put_cell[i]]);
+    //printf("%d(%d,%d) -> %d\n",i+1,x,y,cell[can_put_cell[i]]);
     if(cell[can_put_cell[i]]){
         return 1; //エラー
     }
@@ -388,7 +400,7 @@ void board_print(){ //ターミナル上に盤面を出力
     for(y = 1;y < 9;y++){
         two_byte_char(y);
         for(x = 1;x < 9;x++){
-            switch(cell_read(x,y)){
+            switch(cell_read2(x,y)){
                 case BLACK:
                     printf("○");
                     break;
@@ -416,22 +428,19 @@ void board_print(){ //ターミナル上に盤面を出力
     printf("\n");
 }
 
-int random(){ //乱数を返す
+int rdm(){ //乱数を返す
     srand((unsigned)time(NULL));
     return rand();
 }
 
 void user_turn(){ //ユーザー(人間)のターン
-    int put,i=0;
+    int put;
     can_put();
     board_print();
     if(can_put_cells){
         do{
             printf("どこに石を置きますか?>");
             scanf("%d",&put);
-            if(put < 1){
-                return;
-            }
         }while(attack(put-1)); //+1したのを元に戻す(347行目参照)．成功すれば0を返すためループ脱出．
         return;
     }else{
@@ -440,16 +449,27 @@ void user_turn(){ //ユーザー(人間)のターン
 }
 
 void cpu_turn(){ //CPUのターン
-
+    int put;
+    can_put();
+    board_print();
+    if(can_put_cells){
+        do{
+            put = rdm()%can_put_cells + 1;
+        }while(attack(put-1)); //+1したのを元に戻す(347行目参照)．成功すれば0を返すためループ脱出．
+        printf("CPUは%d番に置きました．\n",put);
+    }else{
+        printf("置けるマスがありません．\n");
+    }
 }
 
 void game(){
+    int i,finish,black_stones,white_stones;
     do{
         printf("0...一人で遊ぶ(CPUと遊ぶ),1...二人で遊ぶ>");
         scanf("%d",&gamemode);
     }while((gamemode < 0)||(gamemode > 1)); //指定した選択肢以外の場合は再度質問
     if(gamemode == SINGLE_PLAY){
-        if(random()%2){
+        if(rdm()%2){
             printf("\nあなたは先手です．\n");
         }else{
             cpu = BLACK;
@@ -482,11 +502,55 @@ void game(){
             printf("の番です．\n");
             user_turn();
         }
-        int i;
         for(i = 0;i < can_put_cells;i++){
             can_put_cell[i] = 64;
         }
         can_put_cells = 0; //置けるマスのリセット
+        finish = 1;
+        black_stones = 0;
+        white_stones = 0;
+        //全てのマスが埋まったら以下の【決着が着いたときの処理】を実行
+        for(i = 0;i < 64;i++){
+            switch(cell[i]){
+                case BLACK:
+                    black_stones++;
+                    break;
+                case WHITE:
+                    white_stones++;
+                    break;
+                default:
+                    finish = 0;
+                    break;
+            }
+        }
+        printf("%d vs %d\n",black_stones,white_stones);
+        //決着が着いたときの処理
+        if(finish){
+            printf("決着が着きました．\n○先手:%d ●後手:%d\n",black_stones,white_stones);
+            board_print();
+            if(black_stones > white_stones){
+                if(gamemode == SINGLE_PLAY){
+                    if(BLACK == cpu){
+                        printf("あなたの負けです．\n");
+                    }else{
+                        printf("あなたの勝ちです．\n");
+                    }
+                }else{
+                    printf("○先手の勝ちです．\n");
+                }
+            }else{
+                if(gamemode == SINGLE_PLAY){
+                    if(WHITE == cpu){
+                        printf("あなたの負けです．\n");
+                    }else{
+                        printf("あなたの勝ちです．\n");
+                    }
+                }else{
+                    printf("●後手の勝ちです．\n");
+                }
+            }
+            return;
+        }
     }
 }
 
